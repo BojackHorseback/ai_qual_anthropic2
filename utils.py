@@ -60,22 +60,37 @@ def save_interview_data_to_drive(transcript_path, time_path):
 
 
 def save_interview_data(username, transcripts_directory, times_directory, file_name_addition_transcript="", file_name_addition_time=""):
-    """Write interview data to disk."""
-    transcript_file = os.path.join(transcripts_directory, f"{username}{file_name_addition_transcript}.txt")
-    time_file = os.path.join(times_directory, f"{username}{file_name_addition_time}.txt")
+    """Write interview data (transcript + timestamps) to a single file."""
+    
+    # Combine file name with timestamp for uniqueness
+    timestamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    file_name = f"{username}_interview_{timestamp}.txt"
 
-    # Store chat transcript
-    with open(transcript_file, "w") as t:
-        for message in st.session_state.messages:
-            t.write(f"{message['role']}: {message['content']}\n")
+    # Set the directory path where the file will be stored
+    file_path = os.path.join(transcripts_directory, file_name)
 
-    # Store interview start time and duration
-    with open(time_file, "w") as d:
-        duration = (time.time() - st.session_state.start_time) / 60
-        d.write(f"Start time (UTC): {time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(st.session_state.start_time))}\n")
-        d.write(f"Interview duration (minutes): {duration:.2f}")
+    try:
+        with open(file_path, "w") as file:
+            # Write the transcript and timestamps
+            file.write("Transcript with Timestamps:\n")
+            for message in st.session_state.messages:
+                message_role = message['role']
+                message_content = message['content']
+                message_time = time.strftime("%H:%M:%S", time.localtime())  # Timestamp for when message was logged
 
-    return transcript_file, time_file
+                file.write(f"{message_role.capitalize()}: {message_content} at {message_time}\n")
+            
+            # Add the interview start time and duration
+            duration = (time.time() - st.session_state.start_time) / 60
+            file.write("\nInterview Info:\n")
+            file.write(f"Start time (UTC): {time.strftime('%d/%m/%Y %H:%M:%S', time.localtime(st.session_state.start_time))}\n")
+            file.write(f"Interview duration (minutes): {duration:.2f}\n")
+    
+    except Exception as e:
+        st.error(f"Error saving interview data: {e}")
+        return None
+
+    return file_path
 
 
 def check_password():

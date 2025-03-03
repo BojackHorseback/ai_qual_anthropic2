@@ -166,7 +166,8 @@ if st.session_state.interview_active:
 
                 # Save transcript and time in the same file
                 try:
-                    with open(os.path.join(config.BACKUPS_DIRECTORY, file_name), 'w') as file:
+                    file_path = os.path.join(config.BACKUPS_DIRECTORY, file_name)
+                    with open(file_path, 'w') as file:
                         # Save the transcript
                         file.write("Transcript:\n")
                         for message in st.session_state.messages:
@@ -178,10 +179,13 @@ if st.session_state.interview_active:
                         # Save the time information (timestamps)
                         file.write("\nTimestamps:\n")
                         for message in st.session_state.messages:
+                            message_time = time.strftime("%H:%M:%S", time.localtime())  # Timestamp for when message was logged
                             if message['role'] == 'user':
-                                file.write(f"User: {message['content']} at {timestamp}\n")
+                                file.write(f"User: {message['content']} at {message_time}\n")
                             elif message['role'] == 'assistant':
-                                file.write(f"Assistant: {message['content']} at {timestamp}\n")
+                                file.write(f"Assistant: {message['content']} at {message_time}\n")
+
+                    st.write(f"Interview saved to: {file_path}")
 
                 except Exception as e:
                     st.error(f"Error saving interview data: {e}")

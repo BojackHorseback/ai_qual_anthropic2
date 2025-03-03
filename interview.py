@@ -195,5 +195,5 @@ if st.session_state.interview_active:
 
                     save_interview_data_to_drive(
                         os.path.join(config.TRANSCRIPTS_DIRECTORY, f"{st.session_state.username}.txt"),
-                        os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}.txt")
+                      #  os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}.txt")
                     )

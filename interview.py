@@ -3,7 +3,6 @@ import time
 from utils import (
     check_password,
     check_if_interview_completed,
-    save_interview_data,
     save_interview_data_to_drive,
 )
 import os
@@ -64,7 +63,6 @@ with col2:
     if st.session_state.interview_active and st.button("Quit", help="End the interview."):
         st.session_state.interview_active = False
         st.session_state.messages.append({"role": "assistant", "content": "You have cancelled the interview."})
-        save_interview_data(st.session_state.username, config.TRANSCRIPTS_DIRECTORY, config.TIMES_DIRECTORY)
 
 # Display previous conversation (except system prompt)
 for message in st.session_state.messages[1:]:
@@ -112,13 +110,10 @@ if not st.session_state.messages:
 
     st.session_state.messages.append({"role": "assistant", "content": message_interviewer})
 
-    # Store initial backup
-    save_interview_data(
-        username=st.session_state.username,
-        transcripts_directory=config.BACKUPS_DIRECTORY,
-        times_directory=config.BACKUPS_DIRECTORY,
-        file_name_addition_transcript=f"_transcript_started_{st.session_state.start_time_file_names}",
-        file_name_addition_time=f"_time_started_{st.session_state.start_time_file_names}",
+    # Store initial backup directly to Drive
+    save_interview_data_to_drive(
+        os.path.join(config.TRANSCRIPTS_DIRECTORY, f"{st.session_state.username}_transcript_started_{st.session_state.start_time_file_names}.txt"),
+        os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}_time_started_{st.session_state.start_time_file_names}.txt")
     )
 
 # Main chat if interview is active
@@ -161,12 +156,9 @@ if st.session_state.interview_active:
                 st.session_state.messages.append({"role": "assistant", "content": message_interviewer})
 
                 try:
-                    save_interview_data(
-                        username=st.session_state.username,
-                        transcripts_directory=config.BACKUPS_DIRECTORY,
-                        times_directory=config.BACKUPS_DIRECTORY,
-                        file_name_addition_transcript=f"_transcript_{st.session_state.start_time_file_names}",
-                        file_name_addition_time=f"_time_{st.session_state.start_time_file_names}",
+                    save_interview_data_to_drive(
+                        os.path.join(config.TRANSCRIPTS_DIRECTORY, f"{st.session_state.username}_transcript_{st.session_state.start_time_file_names}.txt"),
+                        os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}_time_{st.session_state.start_time_file_names}.txt")
                     )
                 except:
                     pass
@@ -177,22 +169,7 @@ if st.session_state.interview_active:
                     st.session_state.interview_active = False
                     st.markdown(config.CLOSING_MESSAGES[code])
 
-                    final_transcript_stored = False
-                    retries = 0
-                    max_retries = 10
-                    while not final_transcript_stored and retries < max_retries:
-                        save_interview_data(
-                            username=st.session_state.username,
-                            transcripts_directory=config.TRANSCRIPTS_DIRECTORY,
-                            times_directory=config.TIMES_DIRECTORY,
-                        )
-                        final_transcript_stored = check_if_interview_completed(config.TRANSCRIPTS_DIRECTORY, st.session_state.username)
-                        time.sleep(0.1)
-                        retries += 1
-
-                    if retries == max_retries:
-                        st.error("Error: Interview transcript could not be saved properly!")
-
+                    # Ensure final transcript is uploaded to Drive
                     save_interview_data_to_drive(
                         os.path.join(config.TRANSCRIPTS_DIRECTORY, f"{st.session_state.username}.txt"),
                         os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}.txt")

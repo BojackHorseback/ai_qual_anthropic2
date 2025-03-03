@@ -30,7 +30,7 @@ if config.LOGINS:
     else:
         st.session_state.username = username  # Set username after authentication
 else:
-    st.session_state.username = "testaccount"
+    st.session_state.username = "ai_qual_anthropic2"
 
 # Ensure the username is initialized
 if "username" not in st.session_state:
@@ -160,40 +160,36 @@ if st.session_state.interview_active:
                 message_placeholder.markdown(message_interviewer)
                 st.session_state.messages.append({"role": "assistant", "content": message_interviewer})
 
-                try:
-                    save_interview_data(
-                        username=st.session_state.username,
-                        transcripts_directory=config.BACKUPS_DIRECTORY,
-                        times_directory=config.BACKUPS_DIRECTORY,
-                        file_name_addition_transcript=f"_transcript_{st.session_state.start_time_file_names}",
-                        file_name_addition_time=f"_time_{st.session_state.start_time_file_names}",
-                    )
-                except:
-                    pass
+                # Create the combined file name for both transcript and time
+                timestamp = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+                file_name = f"{st.session_state.username}_interview_{timestamp}.txt"
 
+                # Save transcript and time in the same file
+                try:
+                    with open(os.path.join(config.BACKUPS_DIRECTORY, file_name), 'w') as file:
+                        # Save the transcript
+                        file.write("Transcript:\n")
+                        for message in st.session_state.messages:
+                            if message['role'] == 'user':
+                                file.write(f"User: {message['content']}\n")
+                            elif message['role'] == 'assistant':
+                                file.write(f"Assistant: {message['content']}\n")
+                        
+                        # Save the time information (timestamps)
+                        file.write("\nTimestamps:\n")
+                        for message in st.session_state.messages:
+                            if message['role'] == 'user':
+                                file.write(f"User: {message['content']} at {timestamp}\n")
+                            elif message['role'] == 'assistant':
+                                file.write(f"Assistant: {message['content']} at {timestamp}\n")
+
+                except Exception as e:
+                    st.error(f"Error saving interview data: {e}")
+
+            # Close the interview if any closing message is detected
             for code in config.CLOSING_MESSAGES.keys():
                 if code in message_interviewer:
                     st.session_state.messages.append({"role": "assistant", "content": message_interviewer})
                     st.session_state.interview_active = False
                     st.markdown(config.CLOSING_MESSAGES[code])
-
-                    final_transcript_stored = False
-                    retries = 0
-                    max_retries = 10
-                    while not final_transcript_stored and retries < max_retries:
-                        save_interview_data(
-                            username=st.session_state.username,
-                            transcripts_directory=config.TRANSCRIPTS_DIRECTORY,
-                            times_directory=config.TIMES_DIRECTORY,
-                        )
-                        final_transcript_stored = check_if_interview_completed(config.TRANSCRIPTS_DIRECTORY, st.session_state.username)
-                        time.sleep(0.1)
-                        retries += 1
-
-                    if retries == max_retries:
-                        st.error("Error: Interview transcript could not be saved properly!")
-
-                    save_interview_data_to_drive(
-                        os.path.join(config.TRANSCRIPTS_DIRECTORY, f"{st.session_state.username}.txt"),
-                        os.path.join(config.TIMES_DIRECTORY, f"{st.session_state.username}.txt")
-                    )
+                    break

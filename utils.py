@@ -3,10 +3,12 @@ import hmac
 import os
 import time
 import io
+import config
+from datetime import datetime
 from google.oauth2.service_account import Credentials  # FIXED import
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-import config
+
 
 # Initialize session state variables
 if "username" not in st.session_state:
@@ -106,5 +108,5 @@ def check_password():
 def check_if_interview_completed(directory, username):
     """Check if interview transcript/time file exists."""
     if username != "testaccount":
-        return os.path.exists(os.path.join(directory, f"{username}-2.txt"))
+        return os.path.exists(os.path.join(directory, f"{username}.txt"))
     return False
